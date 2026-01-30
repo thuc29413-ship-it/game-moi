@@ -3,274 +3,330 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hero Adventure: Blade Master</title>
+    <title>Hero Adventure: Final Integration</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87ceeb; font-family: sans-serif; user-select: none; }
-        #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        /* --- GIAO DIỆN (UI) --- */
+        body { margin: 0; overflow: hidden; background: #87ceeb; font-family: 'Segoe UI', sans-serif; user-select: none; -webkit-user-select: none; }
         
-        /* Dashboard UI */
-        .dashboard { position: absolute; top: 20px; left: 20px; background: rgba(0, 40, 0, 0.6); 
-                      padding: 15px; border-radius: 15px; color: white; border: 2px solid white; 
-                      backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .hp-bar { width: 150px; height: 12px; background: #1a3300; border-radius: 6px; margin-top: 8px; overflow: hidden; border: 1px solid white; }
-        #hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #4ade80, #a3e635); transition: width 0.3s; }
-
-        /* Joystick Control */
-        #joy-base { position: absolute; bottom: 50px; left: 50px; width: 100px; height: 100px; 
-                     background: rgba(255,255,255,0.2); border-radius: 50%; pointer-events: auto; 
-                     display: flex; align-items: center; justify-content: center; border: 2px solid white; }
-        #joy-stick { width: 40px; height: 40px; background: white; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
         
-        /* Attack Button */
-        #btn-attack { position: absolute; bottom: 55px; right: 55px; width: 95px; height: 95px; 
-                       background: radial-gradient(#ff4500, #b22222); border: 4px solid white; border-radius: 50%; 
-                       color: white; font-weight: bold; font-size: 16px; pointer-events: auto; 
-                       box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
-        #btn-attack:active { transform: scale(0.85); background: #ff0000; }
+        /* Joystick (Bên trái) */
+        #joystick-zone { 
+            position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; 
+            background: rgba(255, 255, 255, 0.15); border: 2px solid rgba(255, 255, 255, 0.4); 
+            border-radius: 50%; pointer-events: auto; backdrop-filter: blur(2px);
+        }
+        #joystick-knob { 
+            position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; 
+            background: rgba(255, 255, 255, 0.9); border-radius: 50%; 
+            transform: translate(-50%, -50%); box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+        }
+        
+        /* Nút Tấn công (Bên phải) */
+        #btn-attack { 
+            position: absolute; bottom: 50px; right: 50px; width: 90px; height: 90px; 
+            background: radial-gradient(circle, #ff5f5f, #cc0000); 
+            border: 4px solid white; border-radius: 50%; 
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4); pointer-events: auto; 
+            display: flex; align-items: center; justify-content: center; 
+            color: white; font-weight: bold; font-size: 24px; text-shadow: 1px 1px 2px black;
+        }
+        #btn-attack:active { transform: scale(0.92); background: #aa0000; }
 
-        #loading { position: absolute; width: 100%; height: 100%; background: #ffffff; z-index: 100; 
-                   display: flex; flex-direction: column; align-items: center; justify-content: center; color: #2d5a27; }
+        /* Màn hình chờ tải */
+        #loader-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #111827; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid #374151; 
+            border-top: 5px solid #10b981; border-radius: 50%; 
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        #loading-text { color: #10b981; font-weight: bold; font-size: 18px; letter-spacing: 1px; }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="loading">
-        <h1>⚔️ CHUẨN BỊ CHIẾN BINH...</h1>
-        <p>Đang tải hero.glb và meadow.glb</p>
+    <!-- Màn hình Loading -->
+    <div id="loader-screen">
+        <div class="spinner"></div>
+        <div id="loading-text">ĐANG KẾT NỐI GITHUB...</div>
+        <div style="color: #6b7280; font-size: 12px; margin-top: 10px;">Đang tải: Hero, Animation, Meadow</div>
     </div>
 
-    <div id="ui">
-        <div class="dashboard">
-            <div style="font-size: 12px; letter-spacing: 1px; font-weight: bold;">CHIẾN BINH ĐỒNG CỎ</div>
-            <div class="hp-bar"><div id="hp-fill"></div></div>
-            <div style="margin-top: 8px; font-size: 14px;">💀 QUÁI: <span id="score">0</span></div>
-        </div>
-        <div id="joy-base"><div id="joy-stick"></div></div>
-        <button id="btn-attack">VUNG KIẾM</button>
+    <!-- UI Điều khiển -->
+    <div id="ui-layer">
+        <div id="joystick-zone"><div id="joystick-knob"></div></div>
+        <div id="btn-attack">⚔️</div>
     </div>
 
+    <!-- Thư viện Three.js -->
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/"
-            }
-        }
+        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/" } }
     </script>
 
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        // --- CẤU HÌNH ENGINE ---
+        // ==========================================
+        // 1. CẤU HÌNH KẾT NỐI (Đã điền sẵn cho bạn)
+        // ==========================================
+        const CONFIG = {
+            user: 'thuc29413-ship-it', // Tên GitHub của bạn
+            repo: 'game-moi',          // Tên Kho
+            branch: 'main',            // Nhánh chính
+            files: {
+                hero: 'hero.glb',
+                map: 'meadow.glb',
+                run: 'run.glb',
+                attack: 'attack.glb'
+            }
+        };
+        
+        // Tạo link Raw tự động
+        const getUrl = (filename) => 
+            `https://raw.githubusercontent.com/${CONFIG.user}/${CONFIG.repo}/${CONFIG.branch}/${filename}`;
+
+        // ==========================================
+        // 2. KHỞI TẠO MÔI TRƯỜNG 3D
+        // ==========================================
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb);
-        scene.fog = new THREE.Fog(0x87ceeb, 20, 100);
+        scene.background = new THREE.Color(0x87ceeb); // Bầu trời xanh
+        scene.fog = new THREE.Fog(0x87ceeb, 15, 60);  // Sương mù xa
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-        scene.add(ambient);
-        const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-        sun.position.set(10, 30, 10);
-        sun.castShadow = true;
-        scene.add(sun);
+        // Ánh sáng
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        sunLight.position.set(10, 20, 10);
+        sunLight.castShadow = true;
+        scene.add(sunLight);
 
-        // --- TẢI TÀI NGUYÊN ---
-        let hero, environment, mixer, actions = {};
-        let hp = 100, score = 0, isAttacking = false;
-        let moveVec = new THREE.Vector2(0, 0);
-        const enemies = [];
+        // ==========================================
+        // 3. HỆ THỐNG TẢI & GỘP HOẠT ẢNH (QUAN TRỌNG)
+        // ==========================================
         const loader = new GLTFLoader();
+        let hero, mixer;
+        let actions = {}; // Chứa: { 'run': action, 'attack': action }
+        let activeAction, lastAction;
+        
+        // Hàm cập nhật loading text
+        const setStatus = (txt) => document.getElementById('loading-text').innerText = txt;
 
-        // 1. Tải Môi trường (Meadow)
-        loader.load('meadow.glb', (gltf) => {
-            environment = gltf.scene;
-            // Tự động căn chỉnh meadow nếu nó quá bé (như trong ảnh 2)
-            const box = new THREE.Box3().setFromObject(environment);
-            const size = box.getSize(new THREE.Vector3());
-            if(size.x < 50) {
-                const s = 100 / size.x;
-                environment.scale.set(s, s, s);
+        // BẮT ĐẦU TẢI
+        (async function loadGameAssets() {
+            try {
+                // A. Tải Môi Trường (Meadow)
+                setStatus("ĐANG TẢI ĐỒNG CỎ...");
+                const mapGltf = await loadModel(getUrl(CONFIG.files.map));
+                scene.add(mapGltf.scene);
+
+                // B. Tải Nhân Vật (Hero - Có da thịt)
+                setStatus("ĐANG TẢI CHIẾN BINH...");
+                const heroGltf = await loadModel(getUrl(CONFIG.files.hero));
+                hero = heroGltf.scene;
+                
+                // Fix kích thước Hero (Cao khoảng 1.8m)
+                const box = new THREE.Box3().setFromObject(hero);
+                const size = box.getSize(new THREE.Vector3());
+                const scale = 1.8 / size.y; 
+                hero.scale.set(scale, scale, scale);
+                
+                hero.traverse(c => { if(c.isMesh) { c.castShadow = true; } });
+                scene.add(hero);
+
+                // Khởi tạo Mixer (Bộ trộn hoạt ảnh) cho Hero
+                mixer = new THREE.AnimationMixer(hero);
+
+                // C. Tải Hoạt Ảnh Rời (Run & Attack - Không da)
+                // Đây là bước "Gộp" quan trọng nhất
+                setStatus("ĐANG GỘP HOẠT ẢNH...");
+                
+                // Tải file Run
+                const runGltf = await loadModel(getUrl(CONFIG.files.run));
+                if(runGltf.animations.length > 0) {
+                    const clip = runGltf.animations[0];
+                    const action = mixer.clipAction(clip);
+                    actions['run'] = action;
+                }
+
+                // Tải file Attack
+                const atkGltf = await loadModel(getUrl(CONFIG.files.attack));
+                if(atkGltf.animations.length > 0) {
+                    const clip = atkGltf.animations[0];
+                    const action = mixer.clipAction(clip);
+                    action.setLoop(THREE.LoopOnce); // Chém 1 lần rồi thôi
+                    action.clampWhenFinished = true; // Giữ nguyên tư thế cuối
+                    actions['attack'] = action;
+                }
+
+                // Xong xuôi -> Vào game
+                document.getElementById('loader-screen').style.opacity = 0;
+                setTimeout(() => document.getElementById('loader-screen').style.display = 'none', 500);
+
+            } catch (error) {
+                console.error(error);
+                setStatus("LỖI: KHÔNG TÌM THẤY FILE!");
+                document.getElementById('loading-text').style.color = 'red';
+                alert("Lỗi: Hãy kiểm tra xem bạn đã đổi tên file thành hero.glb, run.glb... chưa?");
             }
-            environment.traverse(n => { if(n.isMesh) { n.receiveShadow = true; n.castShadow = true; } });
-            scene.add(environment);
-        }, undefined, () => {
-            // Backup nếu không có file
-            const ground = new THREE.Mesh(new THREE.PlaneGeometry(500,500), new THREE.MeshStandardMaterial({color: 0x4caf50}));
-            ground.rotation.x = -Math.PI/2;
-            ground.receiveShadow = true;
-            scene.add(ground);
-        });
+        })();
 
-        // 2. Tải Hero (Sửa lỗi "chiếc đũa" và tư thế dơ tay)
-        loader.load('hero.glb', (gltf) => {
-            hero = gltf.scene;
-            
-            // Fix kích thước: Đo chiều cao thực tế và ép về 2.2 đơn vị
-            const box = new THREE.Box3().setFromObject(hero);
-            const size = box.getSize(new THREE.Vector3());
-            const scaleFactor = 2.2 / size.y;
-            hero.scale.set(scaleFactor, scaleFactor, scaleFactor); // Chỉ set 1 lần duy nhất
-            hero.position.y = 0;
-
-            hero.traverse(child => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    // Chỉnh màu thép
-                    child.material.metalness = 0.8;
-                    child.material.roughness = 0.2;
-                }
+        // Hàm hỗ trợ tải file (Promise wrapper)
+        function loadModel(url) {
+            return new Promise((resolve, reject) => {
+                loader.load(url, resolve, undefined, reject);
             });
-
-            scene.add(hero);
-            document.getElementById('loading').style.display = 'none';
-
-            mixer = new THREE.AnimationMixer(hero);
-            gltf.animations.forEach(clip => {
-                actions[clip.name.toLowerCase()] = mixer.clipAction(clip);
-            });
-        });
-
-        // --- HIỆU ỨNG VẾT CHÉM (SLASH EFFECT) ---
-        function createSlashEffect() {
-            const geo = new THREE.TorusGeometry(1.5, 0.05, 8, 32, Math.PI);
-            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1 });
-            const slash = new THREE.Mesh(geo, mat);
-            
-            slash.position.copy(hero.position);
-            slash.position.y += 1.2;
-            slash.rotation.y = hero.rotation.y + Math.PI/2;
-            slash.rotation.x = Math.PI/2 + (Math.random() - 0.5); // Nghiêng ngẫu nhiên cho đẹp
-            
-            scene.add(slash);
-
-            let s = 1.0;
-            const anim = () => {
-                s += 0.15;
-                slash.scale.set(s, s, s);
-                slash.material.opacity -= 0.1;
-                if(slash.material.opacity > 0) requestAnimationFrame(anim);
-                else { scene.remove(slash); slash.geometry.dispose(); slash.material.dispose(); }
-            };
-            anim();
         }
 
-        // --- ĐIỀU KHIỂN JOYSTICK ---
-        const jBase = document.getElementById('joy-base');
-        const jStick = document.getElementById('joy-stick');
-        let jActive = false;
+        // ==========================================
+        // 4. HỆ THỐNG ĐIỀU KHIỂN (INPUT)
+        // ==========================================
+        let moveVec = new THREE.Vector2();
+        let isAttacking = false;
 
-        jBase.addEventListener('touchstart', e => { jActive = true; move(e); });
-        window.addEventListener('touchmove', e => { if(jActive) move(e); });
-        window.addEventListener('touchend', () => { 
-            jActive = false; jStick.style.transform = `translate(0,0)`; moveVec.set(0,0);
-        });
+        // Joystick Logic
+        const joyZone = document.getElementById('joystick-zone');
+        const joyKnob = document.getElementById('joystick-knob');
 
-        function move(e) {
-            const rect = jBase.getBoundingClientRect();
+        joyZone.addEventListener('touchmove', handleJoystick);
+        joyZone.addEventListener('touchstart', handleJoystick);
+        
+        function handleJoystick(e) {
+            e.preventDefault();
             const touch = e.touches[0];
-            const x = touch.clientX - rect.left - rect.width/2;
-            const y = touch.clientY - rect.top - rect.height/2;
-            const dist = Math.min(Math.sqrt(x*x+y*y), 40);
-            const angle = Math.atan2(y, x);
-            jStick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
-            moveVec.set(Math.cos(angle)*(dist/40), -Math.sin(angle)*(dist/40));
-        }
-
-        // --- HÀNH ĐỘNG VUNG KIẾM ---
-        function attack() {
-            if (isAttacking || !hero) return;
-            isAttacking = true;
+            const rect = joyZone.getBoundingClientRect();
+            const centerX = rect.left + rect.width/2;
+            const centerY = rect.top + rect.height/2;
             
-            createSlashEffect();
+            // Tính toán vector
+            let x = touch.clientX - centerX;
+            let y = touch.clientY - centerY;
+            
+            // Giới hạn bán kính xoay (40px)
+            const dist = Math.min(Math.sqrt(x*x + y*y), 40);
+            const angle = Math.atan2(y, x);
+            
+            x = Math.cos(angle) * dist;
+            y = Math.sin(angle) * dist;
 
-            // Hoạt ảnh vung người
-            const startRot = hero.rotation.y;
-            let t = 0;
-            const swing = () => {
-                t += 0.3;
-                // Vung mạnh người về trước
-                hero.rotation.y = startRot + Math.sin(t) * 1.5;
-                if(t < Math.PI) requestAnimationFrame(swing);
-                else { hero.rotation.y = startRot; isAttacking = false; }
-            };
-            swing();
-
-            enemies.forEach((en, i) => {
-                if(hero.position.distanceTo(en.position) < 4.5) {
-                    scene.remove(en); enemies.splice(i, 1);
-                    score += 10; document.getElementById('score').innerText = score;
-                }
-            });
+            // Di chuyển nút
+            joyKnob.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+            
+            // Lưu giá trị điều khiển (chuẩn hóa 0-1)
+            moveVec.set(x/40, y/40);
         }
-        document.getElementById('btn-attack').onclick = attack;
 
-        // --- QUÁI VẬT ---
-        function spawnEnemy() {
-            if(!hero) return;
-            const en = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color: 0xff0000}));
-            const a = Math.random()*Math.PI*2;
-            en.position.set(hero.position.x + Math.cos(a)*25, 0.5, hero.position.z + Math.sin(a)*25);
-            scene.add(en); enemies.push(en);
+        joyZone.addEventListener('touchend', () => {
+            joyKnob.style.transform = `translate(-50%, -50%)`;
+            moveVec.set(0, 0);
+        });
+
+        // Attack Logic
+        document.getElementById('btn-attack').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if(!actions['attack'] || isAttacking) return; // Nếu chưa có anim hoặc đang chém thì thôi
+
+            isAttacking = true;
+            fadeToAction('attack', 0.1); // Chuyển sang chém thật nhanh (0.1s)
+
+            // Tính thời gian hồi (dựa trên độ dài animation)
+            const duration = actions['attack'].getClip().duration;
+            
+            setTimeout(() => {
+                isAttacking = false;
+                if(moveVec.length() > 0.1) fadeToAction('run', 0.2);
+                else fadeToAction(null, 0.2); // Về trạng thái nghỉ (hoặc idle nếu có)
+            }, duration * 1000 - 100); // Trừ hao chút xíu cho mượt
+        });
+
+        // Hàm chuyển đổi Animation mượt (Blending)
+        function fadeToAction(name, duration) {
+            if (activeAction === actions[name]) return;
+
+            previousAction = activeAction;
+            activeAction = actions[name];
+
+            if (previousAction) {
+                previousAction.fadeOut(duration);
+            }
+
+            if (activeAction) {
+                activeAction.reset().fadeIn(duration).play();
+            }
         }
-        setInterval(spawnEnemy, 4000);
 
-        // --- VÒNG LẶP CHÍNH ---
+        // ==========================================
+        // 5. VÒNG LẶP GAME (GAME LOOP)
+        // ==========================================
         const clock = new THREE.Clock();
+
         function animate() {
             requestAnimationFrame(animate);
-            const delta = clock.getDelta();
-            const time = performance.now() * 0.001;
-            if (mixer) mixer.update(delta);
+            const dt = clock.getDelta();
+            if (mixer) mixer.update(dt);
 
             if (hero) {
-                // DI CHUYỂN & HOẠT ẢNH CHẠY
+                // XỬ LÝ DI CHUYỂN
                 if (moveVec.length() > 0.1 && !isAttacking) {
-                    hero.position.x += moveVec.x * 0.18;
-                    hero.position.z -= moveVec.y * 0.18;
-                    const targetAngle = Math.atan2(moveVec.x, moveVec.y);
-                    hero.rotation.y = THREE.MathUtils.lerp(hero.rotation.y, targetAngle, 0.2);
+                    // Xoay nhân vật theo hướng Joystick
+                    const targetRot = Math.atan2(moveVec.x, moveVec.y);
                     
-                    // Hoạt ảnh chạy nhấp nhô (Không dùng scale)
-                    hero.position.y = Math.abs(Math.sin(time * 15)) * 0.2; 
-                    hero.rotation.z = Math.sin(time * 15) * 0.05; // Nghiêng người
-                } else if(!isAttacking) {
-                    // ĐỨNG YÊN (Thở nhẹ bằng position.y)
-                    hero.position.y = Math.sin(time * 2) * 0.05;
-                    hero.rotation.z = 0;
-                    // Bẻ tư thế tay hạ xuống: Xoay model hơi cúi về trước
-                    hero.rotation.x = 0.15; 
+                    // Xoay mượt (Lerp rotation)
+                    let rotDiff = targetRot - hero.rotation.y;
+                    // Chuẩn hóa góc quay (-PI đến PI) để không xoay vòng tròn vô nghĩa
+                    while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+                    while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+                    hero.rotation.y += rotDiff * 10 * dt;
+
+                    // Di chuyển vị trí
+                    const speed = 5 * dt; // Tốc độ chạy
+                    hero.position.x += Math.sin(hero.rotation.y) * speed;
+                    hero.position.z += Math.cos(hero.rotation.y) * speed;
+
+                    // Kích hoạt animation chạy
+                    fadeToAction('run', 0.2);
+                } else if (!isAttacking) {
+                    // Đứng yên
+                    fadeToAction(null, 0.2); // Nếu có 'idle' thì thay null bằng 'idle'
                 }
 
-                // Camera follow chuẩn (Không quá xa)
-                camera.position.lerp(new THREE.Vector3(hero.position.x, hero.position.y + 10, hero.position.z + 16), 0.1);
+                // CAMERA FOLLOW (MƯỢT)
+                const camDist = 8;
+                const camHeight = 6;
+                // Camera luôn đi theo sau lưng nhân vật một chút
+                const targetX = hero.position.x;
+                const targetZ = hero.position.z + camDist;
+                
+                camera.position.x += (targetX - camera.position.x) * 5 * dt;
+                camera.position.z += (targetZ - camera.position.z) * 5 * dt;
+                camera.position.y = hero.position.y + camHeight;
                 camera.lookAt(hero.position);
-
-                enemies.forEach(en => {
-                    const d = new THREE.Vector3().subVectors(hero.position, en.position).normalize();
-                    en.position.add(d.multiplyScalar(0.08));
-                    if(en.position.distanceTo(hero.position) < 1.5) {
-                        hp -= 0.1;
-                        document.getElementById('hp-fill').style.width = Math.max(0, hp) + "%";
-                    }
-                });
             }
+
             renderer.render(scene, camera);
         }
         animate();
 
+        // Xử lý khi xoay màn hình
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
     </script>
 </body>
 </html>
